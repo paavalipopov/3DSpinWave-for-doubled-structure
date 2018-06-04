@@ -7,6 +7,9 @@ using namespace std;
 using namespace Eigen;
 
 double kroneckerD(int i, int j);
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 SpinWaveProblem1D::SpinWaveProblem1D(int N, int baseSplit, int kSteps, int omegaSteps, double H2, double l1, double l2, double d, double omegaStart,
 									double omegaEnd, double kStart, double kEnd){
@@ -59,11 +62,11 @@ void SpinWaveProblem1D::goThroughGrid() {
 	}
 
 	ofstream fout3;
-	fout3.open("determinants");
-	fout3 << "k/b_1 omega real imag abs min" << endl;
 
 
 	for(double k = kStart; k < kEnd; k += kDelta/kSteps) {
+		fout3.open("determinants" + std::to_string(k/b(1)) );
+		fout3 << "omega real imag abs min" << endl;
 		cout << (k - kStart)/kDelta * 100 << "%:  \tCalculating layer k/b_1 = " << k/b(1) << endl;
 
 		for(double omega = omegaStart+1; omega < omegaStart + omegaDelta * (1.0 + 1.0/omegaSteps*0.5); omega += omegaDelta/omegaSteps) {
@@ -71,14 +74,14 @@ void SpinWaveProblem1D::goThroughGrid() {
 		}
 
 		for(unsigned int i = 6; i < determinants.size()-6; i++) {
-			fout3 << k/b(1) << " " << omegaStart + omegaDelta/omegaSteps * (i) << " " << determinants[i].real()
-								<< " " << determinants[i].imag() << " " << abs(determinants[i]);
+			fout3 << omegaStart + omegaDelta/omegaSteps * (i) << " " << sgn(determinants[i].real()) * log(abs(determinants[i].real()))
+								<< " " << sgn(determinants[i].imag()) * log(abs(determinants[i].imag())) << " " << log(abs(determinants[i]));
 			if(isMinimum(determinants, i, 6)) {
 				if(baseSplit != 0)
 					suspiciousOmega.push_back(checkNull(k, omegaStart + omegaDelta/omegaSteps*(i-1),omegaStart + omegaDelta/omegaSteps*(i+1)));
 				fout1 << k/b(1) << " " << omegaStart + omegaDelta/omegaSteps * (i) << " " << omegaIdeal(k, omegaH1, 1)
 								<< " " << omegaIdeal(k, omegaH2, 1) << endl;
-				fout3 << " " << abs(determinants[i]) << endl;
+				fout3 << " " << log(abs(determinants[i])) << endl;
 			}
 			else
 				fout3 << endl;
@@ -94,6 +97,7 @@ void SpinWaveProblem1D::goThroughGrid() {
 
 		determinants.clear();
 		suspiciousOmega.clear();
+		fout3.close();
 	}
 
 	return;
