@@ -8,9 +8,14 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-	double l1 = 9e-4;
-	double l2 = 9e-4;
-	double d = 3e-4;
+	int N = 5;
+	bool debug = false;
+	int kStep = 400;
+	int omegaStep = 600;
+
+	double l1 = 10e-4;
+	double l2 = 10e-4;
+	double d = 1e-4;
 	double gamma = 1.76e7;
 	double H1 = 400;
 	double H2 = 420;
@@ -20,17 +25,17 @@ int main(int argc, char* argv[])
 	double omegaH2 = gamma * H2;
 	double omegaM = gamma * M4pi;
 
-//	double omegaStart = 7.049e9;
+//	double omegaStart = 1.24e10;
 //	double omegaStart = omegaH1;
 	double omegaStart = omegaH2;
 //	double omegaStart = 1;
-//	double omegaEnd = 1.0e10;
+//	double omegaEnd = 1.30e10;
 //	double omegaEnd = omegaH2;
 	double omegaEnd = sqrt(omegaH1*(omegaH1 + omegaM));
 //	double omegaEnd = sqrt(omegaH2*(omegaH2 + omegaM));
 //	double omegaEnd = 2;
-//	double ka = 1.0;
 	double ka = 0.1;
+//	double ka = 1.0;
 
 	double b = 2.0 * M_PI / (l1+l2-2.0*d);
 
@@ -48,6 +53,6 @@ int main(int argc, char* argv[])
 //	cin.get();
 //	SpinWaveProblem1D A = SpinWaveProblem1D(std::stoi(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]));
 
-	SpinWaveProblem1D D = SpinWaveProblem1D(5, 0, 400, 400, H2, l1, l2, d, omegaStart, omegaEnd, kStart, kEnd);
+	SpinWaveProblem1D D = SpinWaveProblem1D(N, 0, kStep, omegaStep, H2, l1, l2, d, omegaStart, omegaEnd, kStart, kEnd, debug);
 }
 

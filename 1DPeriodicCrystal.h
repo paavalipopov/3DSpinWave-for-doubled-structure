@@ -7,7 +7,7 @@
 
 class SpinWaveProblem1D {
 public:
-	SpinWaveProblem1D(int N, int baseSplit, int kStpes, int omegaSteps, double H2, double l1, double l2, double d, double omegaStart, double omegaEnd, double kStart, double kEnd);
+	SpinWaveProblem1D(int N, int baseSplit, int kStpes, int omegaSteps, double H2, double l1, double l2, double d, double omegaStart, double omegaEnd, double kStart, double kEnd, bool debug);
 private:
 	int N, baseSplit; //первое - количество гармоник в разложении, второе - мелкость разбиения при уточнении минимумов
 	int kSteps, omegaSteps; //количество шагов по сетке ка-омега
@@ -42,6 +42,7 @@ private:
 	double omegaEnd;
 	double kStart;
 	double kEnd;
+	bool debug;
 };
 
 #endif // PERIODICCRYSTAL1D
