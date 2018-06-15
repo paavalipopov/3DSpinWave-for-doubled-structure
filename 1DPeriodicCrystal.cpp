@@ -1,7 +1,7 @@
-
 #include "1DPeriodicCrystal.h"
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 using namespace std;
 using namespace Eigen;
@@ -12,7 +12,7 @@ template <typename T> int sgn(T val) {
 }
 
 SpinWaveProblem1D::SpinWaveProblem1D(int N, int baseSplit, int kSteps, int omegaSteps, double H2, double l1, double l2, double d, double omegaStart,
-									double omegaEnd, double kStart, double kEnd){
+									double omegaEnd, double kStart, double kEnd, bool debug){
 	this->N = N;
 	this->baseSplit = baseSplit;
 	this->kSteps = kSteps;
@@ -21,6 +21,7 @@ SpinWaveProblem1D::SpinWaveProblem1D(int N, int baseSplit, int kSteps, int omega
 	this->omegaEnd = omegaEnd;
 	this->kStart = kStart;
 	this->kEnd = kEnd;
+	this->debug = debug;
 
 	//всё в СГС
 	this->l1 = l1;
@@ -47,26 +48,29 @@ void SpinWaveProblem1D::goThroughGrid() {
 	vector<double> suspiciousOmega;
 	vector<complex<double> > determinants;
 
+
+	std::ostringstream filename;
+	filename << "results N " << N << " H2 " << std::setprecision(3) << H2 << " debug " << debug << " l1 to d " << l1/d << " k to b_1 "
+				<< kStart/b(1) << "-" << kEnd/b(1) << " O " << std::setprecision(5) << omegaStart << "-" << omegaEnd;
 	ofstream fout1;
-	fout1.open("results N " + std::to_string(N) + " H2 " + std::to_string(H2) + " l1/d " + std::to_string(l1/d) + " k " +
-				std::to_string(kStart) + ":" + std::to_string(kEnd)+ " O " + std::to_string(omegaStart) + ":" + std::to_string(omegaEnd));
+	fout1.open(filename.str());
 	fout1 << "k/b_1 omega omegaIdeal1 omegaIdeal2 These are results for grid: k: "
 	<< kSteps << " points, omega starting: " << omegaSteps << " points" << endl;
 
 	ofstream fout2;
 	if(baseSplit != 0) {
-		fout2.open("exact results N " + std::to_string(N) + " H2 " + std::to_string(H2) + " l1/d " + std::to_string(l1/d) + " k " +
-				std::to_string(kStart) + ":" + std::to_string(kEnd)+ " O " + std::to_string(omegaStart) + ":" + std::to_string(omegaEnd));
+		filename.str("");
+		filename.clear();
+		filename << "exact results N " << N << " H2 " << std::setprecision(3) << H2 << " debug " << debug <<  " l1 to d " << l1/d << " k to b_1 "
+				<< kStart/b(1) << "-" << kEnd/b(1) << " O " << std::setprecision(5) << omegaStart << "-" << omegaEnd;
+		fout2.open(filename.str());
 		fout2 << "k/b_1 omega omegaIdeal1 omegaIdeal2 These are results for grid: k: "
 		<< kSteps << " points, omega starting: " << omegaSteps << " points" << endl;
 	}
 
-	ofstream fout3;
-
 
 	for(double k = kStart; k < kEnd; k += kDelta/kSteps) {
-		fout3.open("determinants" + std::to_string(k/b(1)) );
-		fout3 << "omega real imag abs min" << endl;
+
 		cout << (k - kStart)/kDelta * 100 << "%:  \tCalculating layer k/b_1 = " << k/b(1) << endl;
 
 		for(double omega = omegaStart+1; omega < omegaStart + omegaDelta * (1.0 + 1.0/omegaSteps*0.5); omega += omegaDelta/omegaSteps) {
@@ -74,17 +78,12 @@ void SpinWaveProblem1D::goThroughGrid() {
 		}
 
 		for(unsigned int i = 6; i < determinants.size()-6; i++) {
-			fout3 << omegaStart + omegaDelta/omegaSteps * (i) << " " << sgn(determinants[i].real()) * log(abs(determinants[i].real()))
-								<< " " << sgn(determinants[i].imag()) * log(abs(determinants[i].imag())) << " " << log(abs(determinants[i]));
 			if(isMinimum(determinants, i, 6)) {
 				if(baseSplit != 0)
 					suspiciousOmega.push_back(checkNull(k, omegaStart + omegaDelta/omegaSteps*(i-1),omegaStart + omegaDelta/omegaSteps*(i+1)));
 				fout1 << k/b(1) << " " << omegaStart + omegaDelta/omegaSteps * (i) << " " << omegaIdeal(k, omegaH1, 1)
 								<< " " << omegaIdeal(k, omegaH2, 1) << endl;
-				fout3 << " " << log(abs(determinants[i])) << endl;
 			}
-			else
-				fout3 << endl;
 		}
 
 		if(baseSplit != 0) {
@@ -97,7 +96,6 @@ void SpinWaveProblem1D::goThroughGrid() {
 
 		determinants.clear();
 		suspiciousOmega.clear();
-		fout3.close();
 	}
 
 	return;
@@ -134,10 +132,10 @@ std::complex<double> SpinWaveProblem1D::M(int n, double omega) {
 		return (mu1(omega) * (l1+l2-d*4) + mu2(omega) * (2*d)) / (l1+l2-2*d);
 
 	else {
-		std::complex<double> exp1 = std::exp(std::complex<double>(0, -1.0) * b(n) * (l1*0.5-d)) - 1.0 + std::exp(std::complex<double>(0, -1.0) * b(n) * (l1*0.5+l2-2*d))- std::exp(std::complex<double>(0, -1.0) * b(n) * (l1*0.5)) + std::exp(-1.0i * b(n) * (l1+l2-2.0*d)) - std::exp(-1.0i * b(n) * (l1*0.5+l2-d));
-		std::complex<double> exp2 = std::exp(std::complex<double>(0, -1.0) * b(n) * (l1*0.5)) - std::exp(std::complex<double>(0, -1.0) * b(n) * (l1*0.5-d)) + std::exp(std::complex<double>(0, -1.0) * b(n) * (l1*0.5+l2-d)) - std::exp(std::complex<double>(0, -1.0) * b(n) * (l1*0.5+l2-2.0*d));
+		std::complex<double> exp1 = exp(-1.0i * b(n) * (l1*0.5-d)) - 1.0 + exp(-1.0i * b(n) * (l1*0.5+l2-2*d))- exp(-1.0i * b(n) * (l1*0.5)) + exp(-1.0i * b(n) * (l1+l2-2.0*d)) - exp(-1.0i * b(n) * (l1*0.5+l2-d));
+		std::complex<double> exp2 = exp(-1.0i * b(n) * (l1*0.5)) - exp(-1.0i * b(n) * (l1*0.5-d)) + exp(-1.0i * b(n) * (l1*0.5+l2-d)) - exp(-1.0i * b(n) * (l1*0.5+l2-2.0*d));
 
-		return std::complex<double>(0, 1.0) / ((l1+l2-2.0*d)*b(n)) * (mu1(omega)* exp1 + mu2(omega)* exp2);
+		return 1.0i / ((l1+l2-2.0*d)*b(n)) * (mu1(omega)* exp1 + mu2(omega)* exp2);
 	}
 }
 
@@ -160,11 +158,27 @@ void SpinWaveProblem1D::fixEigens() {
 	eigenValues = ces.eigenvalues();
 	eigenVectors = ces.eigenvectors();
 
-	//lambda squared into lambda
-	for(int i = 0; i < 2*N+1; i++) {
-		eigenValues(i) = sqrt(eigenValues(i));
+	if(debug) {
+//		lambda squared into lambda
+		for(int i = 0; i < 2*N+1; i++) {
+			eigenValues(i) = sqrt(eigenValues(i).real());
+		}
+
+		for(int i = 0; i < 2*N+1; i++) {
+			for(int j = 0; j < 2*N+1; j++) {
+				if(abs(eigenVectors(i, j).real()) / abs(eigenVectors(i, j).imag()) > pow(10, 20) )
+					eigenVectors(i, j) = eigenVectors(i, j).real();
+				if(abs(eigenVectors(i, j).imag()) / abs(eigenVectors(i, j).real()) > pow(10, 20) )
+					eigenVectors(i, j) = eigenVectors(i, j).imag();
+			}
+		}
 	}
 
+	else {
+		for(int i = 0; i < 2*N+1; i++) {
+			eigenValues(i) = sqrt(eigenValues(i));
+		}
+	}
 
 	return;
 }
