@@ -35,7 +35,6 @@ int main(int argc, char* argv[])
 //	double omegaEnd = sqrt(omegaH1*(omegaH1 + omegaM));
 //	double omegaEnd = sqrt(omegaH2*(omegaH2 + omegaM));
 //	double omegaEnd = 2;
-//	double ka = 0.4;
 	double ka = 1.0;
 
 	double b = 2.0 * M_PI / (l1+l2-2.0*d);
