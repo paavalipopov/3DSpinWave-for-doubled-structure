@@ -7,12 +7,12 @@
 
 class SpinWaveProblem1D {
 public:
-	SpinWaveProblem1D(int N, int baseSplit, int kStpes, int omegaSteps, double H2, double l1, double l2, double d, double omegaStart, double omegaEnd, double kStart, double kEnd, bool debug);
+	SpinWaveProblem1D(int N, int baseSplit, int kStpes, int omegaSteps, double H2, double l1, double l2, double d, double h, double omegaStart, double omegaEnd, double kStart, double kEnd, bool debug);
 private:
 	int N, baseSplit; //первое - количество гармоник в разложении, второе - мелкость разбиения при уточнении минимумов
 	int kSteps, omegaSteps; //количество шагов по сетке ка-омега
 	double omegaDelta; //мелкость по оси частот
-	double l1, l2, d; //линейные размеры
+	double l1, l2, d, h; //линейные размеры
 	double gamma; //гиромагнитное отношения для циклической частоты
 	double H1, H2, M4pi;  //параметры поля и намагниченности
 	double omegaH1, omegaH2, omegaM; //всякие частоты
@@ -43,6 +43,15 @@ private:
 	double kStart;
 	double kEnd;
 	bool debug;
+
+	std::complex<double> A_1(int n, int s, double k, double x);
+	std::complex<double> A_2(int n, int s, double k, double x);
+	std::complex<double> B_1(int n, int s, double k, double x);
+	std::complex<double> B_2(int n, int s, double k, double x);
+	std::complex<double> C_1(int n, int s, double x);
+	std::complex<double> C_2(int n, int s, double x);
+	std::complex<double> D_1(int n, int s, double x);
+	std::complex<double> D_2(int n, int s, double x);
 };
 
 #endif // PERIODICCRYSTAL1D
